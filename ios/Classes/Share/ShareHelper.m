@@ -9,10 +9,6 @@
 #import "ShareHelper.h"
 #import <FBSDKShareKit/FBSDKShareKit.h>
 
-//#import <FBSDKShareKit/FBSDKShareKit/FBSDKShareLinkContent.h>
-//#import <FBSDKShareKit/FBSDKShareKit/FBSDKSharePhotoContent.h>
-//#import <FBSDKShareKit/FBSDKShareKit/FBSDKShareDialog.h>
-//#import <FBSDKShareKit/FBSDKShareKit/FBSDKSharePhoto.h>
 
 @interface ShareHelper ()<FBSDKSharingDelegate>
 
@@ -43,9 +39,8 @@
         [FBSDKShareDialog showFromViewController: root withContent:content delegate: self];
     } else if(model.image != nil){
         FBSDKSharePhotoContent *content = [[FBSDKSharePhotoContent alloc] init];
-        FBSDKSharePhoto *photo = [[FBSDKSharePhoto alloc] init];
-        photo.image = model.image;
-        photo.userGenerated = YES;
+        FBSDKSharePhoto *photo = [[FBSDKSharePhoto alloc] initWithImage:model.image isUserGenerated:YES];
+        photo.isUserGenerated = YES;
         content.photos = @[photo];
         [FBSDKShareDialog showFromViewController: root withContent:content delegate: self];
     }
@@ -61,29 +56,23 @@
             UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
             [pasteboard setData:UIImageJPEGRepresentation(model.image , 1.0) forPasteboardType:@"public.jpeg"];
             url = [NSString stringWithFormat:@"%@/image/%@",url,pasteboard.name];
-            NSLog(@"%@", url);
         }
-        NSLog(@"%@",url);
         self.result(@{@"state": @0, @"msg": @""});
         [[UIApplication sharedApplication] openURL:[NSURL URLWithString: url]];
     } else {
-        NSLog(@"错误");
         self.result(@{@"state": @1, @"msg": @"未安裝"});
     }
 }
 
 - (void)sharer:(id<FBSDKSharing>)sharer didCompleteWithResults:(NSDictionary<NSString *, id> *)results{
-    NSLog(@"完成");
     self.result(@{@"state": @0, @"msg": @""});
 }
 
 - (void)sharer:(id<FBSDKSharing>)sharer didFailWithError:(NSError *)error {
     self.result(@{@"state": @1, @"msg": @"未安裝"});
-    NSLog(@"error");
 }
 
 - (void)sharerDidCancel:(id<FBSDKSharing>)sharer {
-    NSLog(@"取消");
     self.result(@{@"state": @2, @"msg": @"用戶取消"});
 }
 
