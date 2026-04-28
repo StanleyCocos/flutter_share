@@ -114,7 +114,6 @@ public class FluttersharePlugin : FlutterPlugin, MethodCallHandler, ActivityAwar
     }
 
     private fun updateActivity(binding: ActivityPluginBinding) {
-        shareFacebookInit(binding.activity)
         binding.addActivityResultListener { requestCode, resultCode, intent ->
             callbackManager?.onActivityResult(requestCode, resultCode, intent)
             false
@@ -122,6 +121,24 @@ public class FluttersharePlugin : FlutterPlugin, MethodCallHandler, ActivityAwar
         activityRef = WeakReference(binding.activity)
     }
 
+    private fun ensureFacebookShareReady(activity: Activity?): Boolean {
+        if (activity == null) return false
+        if (callbackManager != null && shareDialog != null) {
+            return true
+        }
+        return try {
+            if (!FacebookSdk.isInitialized()) {
+                FacebookSdk.sdkInitialize(activity.applicationContext)
+            }
+            shareFacebookInit(activity)
+            callbackManager != null && shareDialog != null
+        } catch (error: Throwable) {
+            Log.w(TAG, "facebook share sdk unavailable, fallback to web share", error)
+            callbackManager = null
+            shareDialog = null
+            false
+        }
+    }
 
     private fun shareFacebookInit(activity: Activity?) {
         callbackManager = CallbackManager.Factory.create()
@@ -257,7 +274,9 @@ public class FluttersharePlugin : FlutterPlugin, MethodCallHandler, ActivityAwar
     /************************ Facebook 分享 ************************/
     private fun shareTextFacebook(activity: Activity?, text: String) {
         Log.d(TAG, "shareTextFacebook 1")
-        if (ShareDialog.canShow(ShareLinkContent::class.java)) {
+        if (ensureFacebookShareReady(activity) &&
+            ShareDialog.canShow(ShareLinkContent::class.java)
+        ) {
             Log.d(TAG, "shareTextFacebook 2")
             val linkContent = ShareLinkContent.Builder()
                 .setContentUrl(Uri.parse(text))
@@ -275,7 +294,9 @@ public class FluttersharePlugin : FlutterPlugin, MethodCallHandler, ActivityAwar
 
     private fun shareImageFacebook(activity: Activity?, bitmap: Bitmap?, url: String?) {
         Log.d(TAG, "shareImageFacebook 1")
-        if (ShareDialog.canShow(SharePhotoContent::class.java)) {
+        if (ensureFacebookShareReady(activity) &&
+            ShareDialog.canShow(SharePhotoContent::class.java)
+        ) {
             Log.d(TAG, "shareImageFacebook 2")
             val photo = SharePhoto.Builder()
                 .setBitmap(bitmap)
