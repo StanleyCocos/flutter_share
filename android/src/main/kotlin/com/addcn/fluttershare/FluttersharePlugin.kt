@@ -34,7 +34,6 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
-import io.flutter.plugin.common.PluginRegistry.Registrar
 import java.io.*
 import java.lang.ref.WeakReference
 import java.net.URL
@@ -59,30 +58,6 @@ public class FluttersharePlugin : FlutterPlugin, MethodCallHandler, ActivityAwar
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         onAttachedToEngine(flutterPluginBinding.applicationContext, flutterPluginBinding.binaryMessenger)
-    }
-
-    // This static function is optional and equivalent to onAttachedToEngine. It supports the old
-    // pre-Flutter-1.12 Android projects. You are encouraged to continue supporting
-    // plugin registration via this function while apps migrate to use the new Android APIs
-    // post-flutter-1.12 via https://flutter.dev/go/android-project-migration.
-    //
-    // It is encouraged to share logic between onAttachedToEngine and registerWith to keep
-    // them functionally equivalent. Only one of onAttachedToEngine or registerWith will be called
-    // depending on the user's project. onAttachedToEngine or registerWith must both be defined
-    // in the same class.
-    companion object {
-
-        @JvmStatic
-        fun registerWith(registrar: Registrar) {
-            val instance = FluttersharePlugin()
-            instance.onAttachedToEngine(registrar.context(), registrar.messenger())
-            instance.setActivity(registrar.activity())
-            instance.shareFacebookInit(registrar.activity())
-            registrar.addActivityResultListener { requestCode, resultCode, intent ->
-                instance.onActivityResult(requestCode, resultCode, intent)
-                false
-            }
-        }
     }
 
     private fun setActivity(flutterActivity: Activity?) {
