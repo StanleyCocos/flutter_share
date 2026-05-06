@@ -21,41 +21,21 @@
 }
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
-
-    //result(call.method);
-    NSLog(@"%@", call.arguments);
   if ([@"getPlatformVersion" isEqualToString:call.method]) {
       result([@"iOS " stringByAppendingString:[[UIDevice currentDevice] systemVersion]]);
-  } else {
-
-      ShareModel * model = [[ShareModel alloc] initWithParams:call.arguments];
-      NSString * platform = call.arguments[@"platform"];
-      //[[ShareHelper new] shareToPlatformType:@"line" withContent: model result: result];
-      //[[ShareHelper new] shareToPlatformType:@"facebook" withContent: model result: result];
+  } else if ([@"share" isEqualToString:call.method]) {
+      NSDictionary *arguments = [call.arguments isKindOfClass:[NSDictionary class]] ? call.arguments : @{};
+      ShareModel * model = [[ShareModel alloc] initWithParams:arguments];
+      NSString * platform = arguments[@"platform"];
+      ShareHelper *helper = [[ShareHelper alloc] init];
       if([@"SharePlatform.Facebook" isEqualToString:platform]){
-          [[ShareHelper new] shareToPlatformType:@"facebook" withContent: model result: result];
+          [helper shareToPlatformType:@"facebook" withContent:model result:result];
       } else {
-          [[ShareHelper new] shareToPlatformType:@"line" withContent: model result: result];
+          [helper shareToPlatformType:@"line" withContent:model result:result];
       }
-
+  } else {
+      result(FlutterMethodNotImplemented);
   }
-//  else if ([@"shareToFBPlatform" isEqualToString:call.method]) {
-//      NSDictionary *arguments = [call arguments];
-//      NSString * shareContent = arguments[@"shareContent"];
-//      NSString * shareUrl = arguments[@"shareUrl"];
-//      [ShareHelper shareToPlatformType:SLServiceTypeFacebook withContent:shareContent withShareUrl:shareUrl];
-//      result(arguments[""]);
-//  }
-//  else if ([@"shareToTwitterPlatform" isEqualToString:call.method]) {
-//      NSDictionary *arguments = [call arguments];
-//      NSString * shareContent = arguments[@"shareContent"];
-//      NSString * shareUrl = arguments[@"shareUrl"];
-//      [ShareHelper shareToPlatformType:SLServiceTypeTwitter withContent:shareContent withShareUrl:shareUrl];
-//      result(nil);
-//  }
-//  else {
-//    result(FlutterMethodNotImplemented);
-//  }
 }
 
 @end
