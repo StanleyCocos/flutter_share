@@ -15,9 +15,10 @@ A new Flutter plugin.
   s.source           = { :path => '.' }
   s.source_files = 'Classes/**/*'
   s.dependency 'Flutter'
-  s.dependency 'FBSDKShareKit', '~> 12.3.1'
-  s.dependency 'FBSDKCoreKit', '~> 12.3.1'
-  s.platform = :ios, '8.0'
+  s.dependency 'FBSDKShareKit', '~> 18.0'
+  s.dependency 'FBSDKCoreKit', '~> 18.0'
+  s.dependency 'LineSDKSwift', '~> 5.16'
+  s.platform = :ios, '15.6'
 
   # Flutter.framework does not contain a i386 slice. Only x86_64 simulators are supported.
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'VALID_ARCHS[sdk=iphonesimulator*]' => 'x86_64' }
