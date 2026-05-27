@@ -32,13 +32,7 @@ static NSMutableSet<ShareHelper *> *activeHelpers;
  {
      self.result = result;
      [self retainForActiveShare];
-     NSLog(@"[fluttershare][iOS] shareToPlatformType=%@ url=%@ textLength=%lu image=%@",
-           platformType,
-           model.url,
-           (unsigned long)model.text.length,
-           model.image == nil ? @"nil" : @"not_nil");
      dispatch_async(dispatch_get_main_queue(), ^{
-         NSLog(@"[fluttershare][iOS] share on main thread=%@", [NSThread isMainThread] ? @"YES" : @"NO");
          if([@"facebook" isEqualToString:platformType]){
             [self shareToFacebook:model];
          } else {
@@ -50,10 +44,6 @@ static NSMutableSet<ShareHelper *> *activeHelpers;
 - (void)shareToFacebook:(ShareModel *)model{
     self.facebookModel = model;
     UIViewController *root = [self currentPresenter];
-    NSLog(@"[fluttershare][iOS] facebook presenter=%@ url=%@ image=%@",
-          root,
-          model.url,
-          model.image == nil ? @"nil" : @"not_nil");
     if (root == nil) {
         [self completeWithState:1 msg:@"無可用頁面"];
         return;
@@ -64,17 +54,14 @@ static NSMutableSet<ShareHelper *> *activeHelpers;
         FBSDKShareLinkContent *linkContent = [[FBSDKShareLinkContent alloc] init];
         linkContent.contentURL = [NSURL URLWithString:model.url];
         content = linkContent;
-        NSLog(@"[fluttershare][iOS] facebook content linkURL=%@", linkContent.contentURL);
     } else if(model.image != nil){
         FBSDKSharePhotoContent *photoContent = [[FBSDKSharePhotoContent alloc] init];
         FBSDKSharePhoto *photo = [[FBSDKSharePhoto alloc] initWithImage:model.image isUserGenerated:YES];
         photoContent.photos = @[photo];
         content = photoContent;
-        NSLog(@"[fluttershare][iOS] facebook content photo");
     }
 
     if (content == nil) {
-        NSLog(@"[fluttershare][iOS] facebook content nil");
         [self completeWithState:1 msg:@"分享內容不能為空"];
         return;
     }
@@ -99,7 +86,6 @@ static NSMutableSet<ShareHelper *> *activeHelpers;
         return;
     }
 
-    NSLog(@"[fluttershare][iOS] facebook all modes unavailable");
     if ([self openFacebookWebShareWithModel:model]) {
         return;
     }
@@ -117,19 +103,14 @@ static NSMutableSet<ShareHelper *> *activeHelpers;
     dialog.mode = mode;
     NSError *validationError = nil;
     if (![dialog validateWithError:&validationError]) {
-        NSLog(@"[fluttershare][iOS] facebook %@ validate failed error=%@", modeName, validationError);
         return NO;
     }
-    NSLog(@"[fluttershare][iOS] facebook %@ validate success", modeName);
 
     if (!dialog.canShow) {
-        NSLog(@"[fluttershare][iOS] facebook %@ canShow=NO", modeName);
         return NO;
     }
-    NSLog(@"[fluttershare][iOS] facebook %@ canShow=YES", modeName);
 
     BOOL showResult = [dialog show];
-    NSLog(@"[fluttershare][iOS] facebook %@ show result=%@", modeName, showResult ? @"YES" : @"NO");
     return showResult;
 }
 
@@ -139,13 +120,9 @@ static NSMutableSet<ShareHelper *> *activeHelpers;
 {
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         UIApplicationState state = [UIApplication sharedApplication].applicationState;
-        NSLog(@"[fluttershare][iOS] facebook Native fallback check didComplete=%@ appState=%ld",
-              self.didComplete ? @"YES" : @"NO",
-              (long)state);
         if (self.didComplete || state != UIApplicationStateActive) {
             return;
         }
-        NSLog(@"[fluttershare][iOS] facebook Native did not leave app, fallback Browser/Web");
         if ([self tryShowFacebookDialogWithContent:content
                                               root:root
                                               mode:FBSDKShareDialogModeBrowser
@@ -168,7 +145,6 @@ static NSMutableSet<ShareHelper *> *activeHelpers;
 - (void)shareToLine:(ShareModel *)model{
     NSURL *lineScheme = [NSURL URLWithString:@"line://"];
     UIApplication *application = [UIApplication sharedApplication];
-    NSLog(@"[fluttershare][iOS] line canOpen=%@", [application canOpenURL:lineScheme] ? @"YES" : @"NO");
     if([application canOpenURL:lineScheme]){
         NSString *url = @"line://msg";
         if(model.url.length > 0){
@@ -191,16 +167,13 @@ static NSMutableSet<ShareHelper *> *activeHelpers;
 
         if (@available(iOS 10.0, *)) {
             [application openURL:targetURL options:@{} completionHandler:^(BOOL success) {
-                NSLog(@"[fluttershare][iOS] line openURL success=%@", success ? @"YES" : @"NO");
                 [self completeWithState:(success ? 0 : 1) msg:(success ? @"" : @"分享啟動失敗")];
             }];
         } else {
             BOOL success = [application openURL:targetURL];
-            NSLog(@"[fluttershare][iOS] line openURL legacy success=%@", success ? @"YES" : @"NO");
             [self completeWithState:(success ? 0 : 1) msg:(success ? @"" : @"分享啟動失敗")];
         }
     } else {
-        NSLog(@"[fluttershare][iOS] line app not installed, fallback web");
         if (![self openLineWebShareWithModel:model]) {
             [self completeWithState:1 msg:@"未安裝"];
         }
@@ -210,7 +183,6 @@ static NSMutableSet<ShareHelper *> *activeHelpers;
 - (BOOL)openFacebookWebShareWithModel:(ShareModel *)model
 {
     if (model.url.length == 0) {
-        NSLog(@"[fluttershare][iOS] facebook web fallback missing url");
         return NO;
     }
     NSURLComponents *components = [NSURLComponents componentsWithString:@"https://www.facebook.com/sharer/sharer.php"];
@@ -224,7 +196,6 @@ static NSMutableSet<ShareHelper *> *activeHelpers;
 - (BOOL)openLineWebShareWithModel:(ShareModel *)model
 {
     if (model.url.length == 0) {
-        NSLog(@"[fluttershare][iOS] line web fallback missing url");
         return NO;
     }
     NSURLComponents *components = [NSURLComponents componentsWithString:@"https://social-plugins.line.me/lineit/share"];
@@ -238,32 +209,26 @@ static NSMutableSet<ShareHelper *> *activeHelpers;
 - (BOOL)openWebFallbackURL:(NSURL *)targetURL platformName:(NSString *)platformName
 {
     if (targetURL == nil) {
-        NSLog(@"[fluttershare][iOS] %@ web fallback invalid url", platformName);
         return NO;
     }
     UIApplication *application = [UIApplication sharedApplication];
-    NSLog(@"[fluttershare][iOS] %@ web fallback open url=%@", platformName, targetURL);
     if (@available(iOS 10.0, *)) {
         [application openURL:targetURL options:@{} completionHandler:^(BOOL success) {
-            NSLog(@"[fluttershare][iOS] %@ web fallback success=%@", platformName, success ? @"YES" : @"NO");
             [self completeWithState:(success ? 0 : 1) msg:(success ? @"" : @"分享啟動失敗")];
         }];
     } else {
         BOOL success = [application openURL:targetURL];
-        NSLog(@"[fluttershare][iOS] %@ web fallback legacy success=%@", platformName, success ? @"YES" : @"NO");
         [self completeWithState:(success ? 0 : 1) msg:(success ? @"" : @"分享啟動失敗")];
     }
     return YES;
 }
 
 - (void)sharer:(id<FBSDKSharing>)sharer didCompleteWithResults:(NSDictionary<NSString *, id> *)results{
-    NSLog(@"[fluttershare][iOS] facebook delegate complete results=%@", results);
     [self completeWithState:0 msg:@""];
 }
 
 - (void)sharer:(id<FBSDKSharing>)sharer didFailWithError:(NSError *)error {
     NSString *message = error.localizedDescription.length > 0 ? error.localizedDescription : @"分享失敗";
-    NSLog(@"[fluttershare][iOS] facebook delegate fail error=%@", error);
     if ([self openFacebookWebShareWithModel:self.facebookModel]) {
         return;
     }
@@ -271,7 +236,6 @@ static NSMutableSet<ShareHelper *> *activeHelpers;
 }
 
 - (void)sharerDidCancel:(id<FBSDKSharing>)sharer {
-    NSLog(@"[fluttershare][iOS] facebook delegate cancel");
     [self completeWithState:2 msg:@"用戶取消"];
 }
 
@@ -292,7 +256,6 @@ static NSMutableSet<ShareHelper *> *activeHelpers;
 - (void)completeWithState:(NSInteger)state msg:(NSString *)msg
 {
     if (self.didComplete) {
-        NSLog(@"[fluttershare][iOS] complete ignored state=%ld msg=%@", (long)state, msg);
         return;
     }
     self.didComplete = YES;
@@ -300,7 +263,6 @@ static NSMutableSet<ShareHelper *> *activeHelpers;
     FlutterResult callback = self.result;
     self.result = nil;
     self.facebookModel = nil;
-    NSLog(@"[fluttershare][iOS] complete state=%ld msg=%@", (long)state, msg);
     if (callback != nil) {
         callback(@{@"state": @(state), @"msg": msg ?: @""});
     }
@@ -318,9 +280,6 @@ static NSMutableSet<ShareHelper *> *activeHelpers;
     UIApplication *application = [UIApplication sharedApplication];
     if (@available(iOS 13.0, *)) {
         for (UIScene *scene in application.connectedScenes) {
-            NSLog(@"[fluttershare][iOS] scene=%@ activationState=%ld",
-                  scene,
-                  (long)scene.activationState);
             if (![scene isKindOfClass:[UIWindowScene class]]) {
                 continue;
             }
@@ -329,7 +288,6 @@ static NSMutableSet<ShareHelper *> *activeHelpers;
                 continue;
             }
             for (UIWindow *window in windowScene.windows) {
-                NSLog(@"[fluttershare][iOS] window=%@ isKey=%@", window, window.isKeyWindow ? @"YES" : @"NO");
                 if (window.isKeyWindow) {
                     return window;
                 }
