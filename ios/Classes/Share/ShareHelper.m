@@ -147,9 +147,9 @@ static NSMutableSet<ShareHelper *> *activeHelpers;
     UIApplication *application = [UIApplication sharedApplication];
     if([application canOpenURL:lineScheme]){
         NSString *url = @"line://msg";
-        if(model.url.length > 0){
-            NSString *encodedURL = [model.url stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]];
-            url = [NSString stringWithFormat:@"%@/text/%@",url,encodedURL ?: model.url];
+        if(model.text.length > 0){
+            NSString *encodedText = [self percentEncodeText:model.text];
+            url = [NSString stringWithFormat:@"%@/text/%@",url,encodedText ?: model.text];
         } else if (model.image != nil) {
             UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
             [pasteboard setData:UIImageJPEGRepresentation(model.image , 1.0) forPasteboardType:@"public.jpeg"];
@@ -180,6 +180,13 @@ static NSMutableSet<ShareHelper *> *activeHelpers;
     }
 }
 
+- (NSString *)percentEncodeText:(NSString *)text
+{
+    NSMutableCharacterSet *allowedCharacters = [NSMutableCharacterSet alphanumericCharacterSet];
+    [allowedCharacters addCharactersInString:@"-._~"];
+    return [text stringByAddingPercentEncodingWithAllowedCharacters:allowedCharacters];
+}
+
 - (BOOL)openFacebookWebShareWithModel:(ShareModel *)model
 {
     if (model.url.length == 0) {
@@ -195,12 +202,12 @@ static NSMutableSet<ShareHelper *> *activeHelpers;
 
 - (BOOL)openLineWebShareWithModel:(ShareModel *)model
 {
-    if (model.url.length == 0) {
+    if (model.text.length == 0) {
         return NO;
     }
-    NSURLComponents *components = [NSURLComponents componentsWithString:@"https://social-plugins.line.me/lineit/share"];
+    NSURLComponents *components = [NSURLComponents componentsWithString:@"https://line.me/R/share"];
     components.queryItems = @[
-        [NSURLQueryItem queryItemWithName:@"url" value:model.url],
+        [NSURLQueryItem queryItemWithName:@"text" value:model.text],
     ];
     NSURL *targetURL = components.URL;
     return [self openWebFallbackURL:targetURL platformName:@"line"];

@@ -23,18 +23,19 @@
 
 - (void)initParams:(NSDictionary *)params{
     
-    NSString * image = params[@"image"];
-    NSString * text = params[@"text"];
+    id imageValue = params[@"image"];
+    id textValue = params[@"text"];
+    NSString * image = [imageValue isKindOfClass:[NSString class]] ? imageValue : @"";
+    NSString * text = [textValue isKindOfClass:[NSString class]] ? textValue : @"";
     
+    self.text = text;
     if([text hasPrefix:@"http"]){
         self.url = text;
-    } else {
-        self.text = text;
     }
     
     if([image hasPrefix:@"http"]){
         self.image = [self downloadImageResouce:image];
-    } else {
+    } else if (image.length > 0) {
         self.image = [UIImage imageWithContentsOfFile: image];
     }
 
